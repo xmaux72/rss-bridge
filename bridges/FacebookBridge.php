@@ -146,7 +146,12 @@ class FacebookBridge extends BridgeAbstract{
 		}
 
 		//No captcha? We can carry on retrieving page contents :)
-		$element = $html->find('[id^=PagePostsSectionPagelet-]')[0]->children(0)->children(0)->children(0);
+		$pagelet = $html->find('[id^=pagelet_timeline_main_column]')[0];
+
+		if(count($pagelet)>0) {
+
+			$element = $pagelet->find('[class=_4-u2 _4-u8]');;
+		}
 
 		if(isset($element)) {
 
@@ -154,11 +159,16 @@ class FacebookBridge extends BridgeAbstract{
 			$profilePic = 'https://graph.facebook.com/'.$param['u'].'/picture?width=200&amp;height=200';
 			$this->name = $author;
 
-			foreach($element->children() as $post) {
+			foreach($element as $post) {
 			
 				$item = new \Item();
 
-				if($post->hasAttribute("data-time")) {
+				$post = $post->children(0)->children(0)->children(0)->children(1);
+				error_log("POST");
+				error_log($post);
+
+				//TODO: attenzione questo è SUPER temporaneo, ma almeno si ricomincia a vedere qualcosa
+				if(true || $post->hasAttribute("data-time")) {
 
 					//Retrieve post contents
 					$content = preg_replace('/(?i)><div class=\"clearfix([^>]+)>(.+?)div\ class=\"userContent\"/i', '', $post);
