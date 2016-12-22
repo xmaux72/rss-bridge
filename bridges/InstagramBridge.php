@@ -23,8 +23,10 @@ class InstagramBridge extends BridgeAbstract{
 
     public function collectData(array $param){
         $html = '';
+        $author = '<unknown>';
         if (isset($param['u'])) {   /* user timeline mode */
             $this->request = $param['u'];
+            $author = $this->request;
             $html = file_get_html('http://instagram.com/'.urlencode($this->request)) or $this->returnError('Could not request Instagram.', 404);
         }
         else {
@@ -58,7 +60,6 @@ class InstagramBridge extends BridgeAbstract{
 
         foreach($userMedia as $media)
         {
-
         	$item = new \Item();
         	$item->uri = "https://instagram.com/p/".$media->code."/";
         	$item->content = '<img src="' . htmlentities($media->display_src) . '" />';
@@ -69,8 +70,9 @@ class InstagramBridge extends BridgeAbstract{
         		$item->title = basename($media->display_src);
         	}
         	$item->timestamp = $media->date;
+            $item->author = $author;
+
         	$this->items[] = $item;
-        	
         }
     }
 

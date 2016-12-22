@@ -32,12 +32,14 @@ class TwitterBridge extends BridgeAbstract{
 
     public function collectData(array $param){
         $html = '';
+        $author = '<unknown>';
         if (isset($param['q'])) {   /* keyword search mode */
             $this->request = $param['q'];
             $html = file_get_html('https://twitter.com/search?q='.urlencode($this->request).'&f=tweets') or $this->returnError('No results for this query.', 404);
         }
         elseif (isset($param['u'])) {   /* user timeline mode */
             $this->request = $param['u'];
+            $author = $this->request;
             $html = file_get_html('http://twitter.com/'.urlencode($this->request)) or $this->returnError('Requested username can\'t be found.', 404);
         }
         else {
@@ -52,6 +54,7 @@ class TwitterBridge extends BridgeAbstract{
             $item->id = $tweet->getAttribute('data-tweet-id');	// get TweetID
             $item->uri = 'https://twitter.com'.$tweet->find('a.js-permalink', 0)->getAttribute('href');	// get tweet link
             $item->timestamp = $tweet->find('span.js-short-timestamp', 0)->getAttribute('data-time');	// extract tweet timestamp
+            $item->author = $author;
 
             //xmaux72: media thumbnail added
             foreach($tweet->find('div.AdaptiveMedia-photoContainer') as $photo) {
