@@ -107,7 +107,7 @@ class FacebookBridge extends BridgeAbstract{
 			if (!strpos($this->getInput('u'), "/")) {
                 $html = getSimpleHTMLDOM(self::URI.urlencode($this->getInput('u')).'?_fb_noscript=1')
                     or returnServerError('No results for this query.');
-			} else {
+				} else {
                 $html = getSimpleHTMLDOM(self::URI.'pages/'.$this->getInput('u').'?_fb_noscript=1')
                     or returnServerError('No results for this query.');
 			}
@@ -150,7 +150,7 @@ class FacebookBridge extends BridgeAbstract{
 			$this->authorName = $author;
 
 			foreach($element->children() as $post) {
-
+			
 				$item = array();
 
 				if (count($post->find('abbr')) > 0) {
@@ -191,6 +191,11 @@ class FacebookBridge extends BridgeAbstract{
 					$title = $title.' | '.strip_tags($content);
 					if (strlen($title) > 64)
 						$title = substr($title, 0, strpos(wordwrap($title, 64), "\n")).'...';
+
+					//Use first image as thumbnail if available, or profile pic fallback
+					$thumbnail = $post->find('img', 1)->src;
+					if (strlen($thumbnail) == 0)
+						$thumbnail = $profilePic;
 
 					//Build and add final item
 					$item['uri'] = self::URI.$post->find('abbr')[0]->parent()->getAttribute('href');

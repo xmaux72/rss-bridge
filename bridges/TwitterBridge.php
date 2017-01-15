@@ -46,9 +46,9 @@ class TwitterBridge extends BridgeAbstract{
             $specific='@';
             $param='u';
             break;
-        }
+			}
         return 'Twitter '.$specific.$this->getInput($param);
-    }
+			}
 
     public function getURI(){
         switch($this->queriedContext){
@@ -58,10 +58,11 @@ class TwitterBridge extends BridgeAbstract{
             return self::URI.urlencode($this->getInput('u')).
                 ($this->getInput('norep')?'':'/with_replies');
         }
-    }
+	}
 
 	public function collectData(){
-		$html = '';
+        $html = '';
+        $author = '<unknown>';
 
 		$html = getSimpleHTMLDOM($this->getURI());
 		if(!$html){
@@ -70,12 +71,12 @@ class TwitterBridge extends BridgeAbstract{
 				returnServerError('No results for this query.');
 			case 'By username':
 				returnServerError('Requested username can\'t be found.');
-			}
-		}
+        }
+        }
 
 		$hidePictures = $this->getInput('nopic');
 
-		foreach($html->find('div.js-stream-tweet') as $tweet) {
+        foreach($html->find('div.js-stream-tweet') as $tweet) {
 			$item = array();
 			// extract username and sanitize
 			$item['username'] = $tweet->getAttribute('data-screen-name');
@@ -93,38 +94,41 @@ class TwitterBridge extends BridgeAbstract{
 			$item['timestamp'] = $tweet->find('span.js-short-timestamp', 0)->getAttribute('data-time');
 			// generate the title
 			$item['title'] = strip_tags(html_entity_decode($tweet->find('p.js-tweet-text', 0)->innertext,ENT_QUOTES,'UTF-8'));
+            $item['author'] = $author;
 
-			// processing content links
-			foreach($tweet->find('a') as $link) {
-				if($link->hasAttribute('data-expanded-url') ) {
-					$link->href = $link->getAttribute('data-expanded-url');
-				}
-				$link->removeAttribute('data-expanded-url');
-				$link->removeAttribute('data-query-source');
-				$link->removeAttribute('rel');
-				$link->removeAttribute('class');
-				$link->removeAttribute('target');
-				$link->removeAttribute('title');
-			}
+            // processing content links
+            foreach($tweet->find('a') as $link) {
+                if($link->hasAttribute('data-expanded-url') ) {
+                    $link->href = $link->getAttribute('data-expanded-url');
+                }
+                $link->removeAttribute('data-expanded-url');
+                $link->removeAttribute('data-query-source');
+                $link->removeAttribute('rel');
+                $link->removeAttribute('class');
+                $link->removeAttribute('target');
+                $link->removeAttribute('title');
+            }
 
-			// process emojis (reduce size)
-			foreach($tweet->find('img.Emoji') as $img){
-				$img->style .= ' height: 1em;';
-			}
+            $item['content'] = str_replace('href="/', 'href="'.self::URI, strip_tags($tweet->find('p.js-tweet-text', 0)->innertext, '<a>'));	// extract tweet text
 
-			// get tweet text
-			$cleanedTweet = str_replace('href="/', 'href="'.self::URI, $tweet->find('p.js-tweet-text', 0)->innertext);
+            // process emojis (reduce size)
+            foreach($tweet->find('img.Emoji') as $img){
+                $img->style .= ' height: 1em;';
+            }
 
-			// Add picture to content
-			$picture_html = '';
-			if(!$hidePictures){
-				$picture_html = <<<EOD
+            // get tweet text
+            $cleanedTweet = str_replace('href="/', 'href="'.self::URI, $tweet->find('p.js-tweet-text', 0)->innertext);
+
+            // Add picture to content
+            $picture_html = '';
+            if(!$hidePictures){
+                $picture_html = <<<EOD
 <a href="https://twitter.com/{$item['username']}"><img style="align: top; width:75 px; border: 1px solid black;" alt="{$item['username']}" src="{$item['avatar']}" title="{$item['fullname']}" /></a>
 EOD;
-			}
+            }
 
-			// add content
-			$item['content'] = <<<EOD
+            // add content
+            $item['content'] = <<<EOD
 <div style="display: inline-block; vertical-align: top;">
 	{$picture_html}
 </div>
@@ -133,8 +137,8 @@ EOD;
 </div>
 EOD;
 
-			// put out
-			$this->items[] = $item;
-		}
-	}
+            // put out
+            $this->items[] = $item;
+        }
+    }
 }

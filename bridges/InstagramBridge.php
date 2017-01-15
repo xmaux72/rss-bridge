@@ -16,30 +16,30 @@ class InstagramBridge extends BridgeAbstract{
     public function collectData(){
         $html = getSimpleHTMLDOM($this->getURI())
             or returnServerError('Could not request Instagram.');
-
+        
         $innertext = null;
-
+        
         foreach($html->find('script') as $script)
         {
         	if ('' === $script->innertext) {
         		continue;
         	}
-
+        	
         	$pos = strpos(trim($script->innertext), 'window._sharedData');
         	if (0 !== $pos)
         	{
         		continue;
         	}
-
+        	
         	$innertext = $script->innertext;
         	break;
         }
 
         $json = trim(substr($innertext, $pos+18), ' =;');
         $data = json_decode($json);
-
-
-
+        
+        
+        
         $userMedia = $data->entry_data->ProfilePage[0]->user->media->nodes;
 
         foreach($userMedia as $media)
@@ -54,7 +54,9 @@ class InstagramBridge extends BridgeAbstract{
         	} else {
         		$item['title'] = basename($media->display_src);
         	}
-        	$item['timestamp'] = $media->date;
+            $item['timestamp'] = $media->date;
+            $item['author'] = 'Prada';
+
         	$this->items[] = $item;
 
         }
