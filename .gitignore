@@ -227,4 +227,14 @@ pip-log.txt
 /cache
 /whitelist.txt
 DEBUG
-rss-bridge.iml
+
+######################
+## VisualStudioCode ##
+######################
+.vscode/*
+
+######################
+## Idea ##
+######################
+.idea
+*.iml
