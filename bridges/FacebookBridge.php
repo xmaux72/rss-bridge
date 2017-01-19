@@ -150,7 +150,7 @@ class FacebookBridge extends BridgeAbstract{
 			$this->authorName = $author;
 
 			foreach($element->children() as $post) {
-			
+
 				$item = array();
 
 				if (count($post->find('abbr')) > 0) {
@@ -169,8 +169,8 @@ class FacebookBridge extends BridgeAbstract{
 
 					//Clean useless html tag properties and fix link closing tags
 					foreach (array('onmouseover', 'onclick', 'target', 'ajaxify', 'tabindex',
-						'class', 'style', 'data-[^=]*', 'aria-[^=]*', 'role', 'rel', 'id') as $property_name)
-							$content = preg_replace('/ '.$property_name.'=\"[^"]*\"/i', '', $content);
+								 'class', 'style', 'data-[^=]*', 'aria-[^=]*', 'role', 'rel', 'id') as $property_name)
+						$content = preg_replace('/ '.$property_name.'=\"[^"]*\"/i', '', $content);
 					$content = preg_replace('/<\/a [^>]+>/i', '</a>', $content);
 
 					//Convert textual representation of emoticons eg "<i><u>smile emoticon</u></i>" back to ASCII emoticons eg ":)"
@@ -193,9 +193,30 @@ class FacebookBridge extends BridgeAbstract{
 						$title = substr($title, 0, strpos(wordwrap($title, 64), "\n")).'...';
 
 					//Use first image as thumbnail if available, or profile pic fallback
-					$thumbnail = $post->find('img', 1)->src;
+					$thumbnail = htmlspecialchars_decode($post->find('img', 1)->src);
 					if (strlen($thumbnail) == 0)
 						$thumbnail = $profilePic;
+
+/*
+                	$thumbnail = $post->find('img', 1);
+					if (is_object($thumbnail)) {
+
+						$tokenToFind = "background-image";
+						if(!$thumbnail->hasAttribute("style") || strpos($thumbnail->style, $tokenToFind) === FALSE) {
+							//article type: img
+							$thumbnail = $thumbnail->src;
+						}
+						else {
+							//article type: video
+							$thumbnail_style = $thumbnail->style;
+							$idx = strpos($thumbnail_style, $tokenToFind);
+							$idx = strpos($thumbnail_style, "(", $idx);
+							$idx2 = strpos($thumbnail_style, ")", $idx + 1);
+							$thumbnail = substr($thumbnail_style, $idx + 1, $idx2 - $idx - 1);
+						}
+					}
+					else $thumbnail = $profilePic;
+*/
 
 					//Build and add final item
 					$item['uri'] = self::URI.$post->find('abbr')[0]->parent()->getAttribute('href');

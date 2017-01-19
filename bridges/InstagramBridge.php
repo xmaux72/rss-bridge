@@ -55,10 +55,12 @@ class InstagramBridge extends BridgeAbstract{
         		$item['title'] = basename($media->display_src);
         	}
             $item['timestamp'] = $media->date;
-            $item['author'] = 'Prada';
+            $item['author'] = $this->getInput('u');
 
-        	$this->items[] = $item;
+            $item['thumbnailUri'] = $media->display_src;
 
+            $this->items[] = $item;
+        	
         }
     }
 

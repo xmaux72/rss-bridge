@@ -1,4 +1,5 @@
 <?php
+//Based on https://github.com/mitsukarenai/twitterbridge-noapi
 class TwitterBridge extends BridgeAbstract{
     const NAME='Twitter Bridge';
     const URI='https://twitter.com/';
@@ -71,30 +72,56 @@ class TwitterBridge extends BridgeAbstract{
                     returnServerError('No results for this query.');
                 case 'By username':
                     returnServerError('Requested username can\'t be found.');
-            }
+        }
         }
 
         $hidePictures = $this->getInput('nopic');
 
         foreach($html->find('div.js-stream-tweet') as $tweet) {
-			$item = array();
-			// extract username and sanitize
-			$item['username'] = $tweet->getAttribute('data-screen-name');
-			// extract fullname (pseudonym)
-			$item['fullname'] = $tweet->getAttribute('data-name');
-			// get author
-			$item['author'] = $item['fullname'] . ' (@' . $item['username'] . ')';
-			// get avatar link
-			$item['avatar'] = $tweet->find('img', 0)->src;
-			// get TweetID
-			$item['id'] = $tweet->getAttribute('data-tweet-id');
-			// get tweet link
-			$item['uri'] = self::URI.$tweet->find('a.js-permalink', 0)->getAttribute('href');
-			// extract tweet timestamp
-			$item['timestamp'] = $tweet->find('span.js-short-timestamp', 0)->getAttribute('data-time');
-			// generate the title
-			$item['title'] = strip_tags(html_entity_decode($tweet->find('p.js-tweet-text', 0)->innertext,ENT_QUOTES,'UTF-8'));
+            $item = array();
+            // extract username and sanitize
+            $item['username'] = $tweet->getAttribute('data-screen-name');
+            // extract fullname (pseudonym)
+            $item['fullname'] = $tweet->getAttribute('data-name');
+            // get author
+            $item['author'] = $item['fullname'] . ' (@' . $item['username'] . ')';
+            // get avatar link
+            $item['avatar'] = $tweet->find('img', 0)->src;
+            // get TweetID
+            $item['id'] = $tweet->getAttribute('data-tweet-id');
+            // get tweet link
+            $item['uri'] = self::URI.$tweet->find('a.js-permalink', 0)->getAttribute('href');
+            // extract tweet timestamp
+            $item['timestamp'] = $tweet->find('span.js-short-timestamp', 0)->getAttribute('data-time');
+            // generate the title
+            $item['title'] = strip_tags(html_entity_decode($tweet->find('p.js-tweet-text', 0)->innertext,ENT_QUOTES,'UTF-8'));
             $item['author'] = $author;
+
+            $thumbFound = false;
+            //xmaux72: media thumbnail added
+            foreach($tweet->find('div.AdaptiveMedia-photoContainer') as $photo) {
+                $item['thumbnailUri'] = $photo->getAttribute('data-image-url');
+                $thumbFound = true;
+            }
+
+            if(!$thumbFound) {
+                //xmaux72 if no img found, let's try with video...
+                foreach($tweet->find('div.PlayableMedia-player') as $thumbnail) {
+
+                    $tokenToFind = "background-image";
+                    if($thumbnail->hasAttribute("style") && strpos($thumbnail->style, $tokenToFind) >= 0) {
+                        //article type: video
+                        $thumbnail_style = $thumbnail->style;
+                        $idx = strpos($thumbnail_style, $tokenToFind);
+                        $idx = strpos($thumbnail_style, "'", $idx);
+                        $idx2 = strpos($thumbnail_style, "'", $idx + 1);
+                        $item['thumbnailUri'] = substr($thumbnail_style, $idx + 1, $idx2 - $idx - 1);
+                        $thumbFound = true;
+                        break;
+                    }
+                }
+            }
+
 
             // processing content links
             foreach($tweet->find('a') as $link) {
@@ -136,11 +163,6 @@ EOD;
 	<blockquote>{$cleanedTweet}</blockquote>
 </div>
 EOD;
-
-            //xmaux72: media thumbnail added
-            foreach($tweet->find('div.AdaptiveMedia-photoContainer') as $photo) {
-                $item['thumbnailUri'] = $photo->getAttribute('data-image-url');
-            }
 
             // put out
             $this->items[] = $item;

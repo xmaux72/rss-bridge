@@ -31,6 +31,8 @@ class MrssFormat extends FormatAbstract {
 			$itemTimestamp = isset($item['timestamp']) ? $this->xml_encode(date(DATE_RFC2822, $item['timestamp'])) : '';
 			$itemContent = isset($item['content']) ? $this->xml_encode($this->sanitizeHtml($item['content'])) : '';
 
+            $itemThumbnailUri = isset($item['thumbnailUri']) ? $this->xml_encode($item['thumbnailUri']) : '';
+
 			$entryEnclosuresWarning = '';
 			$entryEnclosures = '';
 			if(isset($item['enclosures'])){
@@ -59,6 +61,9 @@ Some media files might not be shown to you. Consider using the ATOM format inste
 		<pubDate>{$itemTimestamp}</pubDate>
 		<description>{$itemContent}{$entryEnclosuresWarning}</description>
 		<author>{$itemAuthor}</author>
+        <media:title>{$itemTitle}</media:title>
+        <media:thumbnail url="{$itemThumbnailUri}" />
+		
 		{$entryEnclosures}
 	</item>
 
